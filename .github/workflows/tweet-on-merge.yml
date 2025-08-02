@@ -1,0 +1,139 @@
+name: Tweet on Main Merge
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  # 設定値
+  MAX_TWEET_LENGTH: "150"
+  REQUIRED_HASHTAGS: "#BuildInPublic #Shipaton"
+  BOT_PREFIX: "【#PokoPay 進捗Bot】"
+  OPENAI_MODEL: "gpt-4"
+  OPENAI_MAX_TOKENS: "150"
+  OPENAI_TEMPERATURE: "0.7"
+
+jobs:
+  analyze-and-tweet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install twitter-api-v2 @octokit/rest openai
+      
+      - name: Generate commit analysis
+        id: analysis
+        run: |
+          # 最新のコミット情報を取得
+          COMMIT_HASH=$(git rev-parse HEAD)
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s" | tr -d '\n\r' | sed 's/"/\\"/g')
+          COMMIT_AUTHOR=$(git log -1 --pretty=format:"%an" | tr -d '\n\r')
+          COMMIT_DATE=$(git log -1 --pretty=format:"%cd" --date=short | tr -d '\n\r')
+          
+          # 直近10件のコミットを分析
+          RECENT_COMMITS=$(git log --oneline -10)
+          FEATURES=$(echo "$RECENT_COMMITS" | grep -i "feat\|feature\|✨" | head -3 | tr -d '\n\r' | sed 's/"/\\"/g' || echo "")
+          FIXES=$(echo "$RECENT_COMMITS" | grep -i "fix\|bug\|🐛" | head -3 | tr -d '\n\r' | sed 's/"/\\"/g' || echo "")
+          IMPROVEMENTS=$(echo "$RECENT_COMMITS" | grep -i "improve\|enhance\|♻️" | head -3 | tr -d '\n\r' | sed 's/"/\\"/g' || echo "")
+          BREAKING=$(echo "$RECENT_COMMITS" | grep -i "breaking\|💥" | head -2 | tr -d '\n\r' | sed 's/"/\\"/g' || echo "")
+          
+          # 変更統計を取得
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | wc -l)
+          ADDED_LINES=$(git diff --stat HEAD~1 HEAD | tail -1 | awk '{print $4}' | sed 's/,//' || echo "0")
+          
+          # 分析結果を出力
+          echo "commit_hash<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_HASH" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "commit_message<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "commit_author<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_AUTHOR" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "commit_date<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_DATE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "features<<EOF" >> $GITHUB_OUTPUT
+          echo "$FEATURES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "fixes<<EOF" >> $GITHUB_OUTPUT
+          echo "$FIXES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "improvements<<EOF" >> $GITHUB_OUTPUT
+          echo "$IMPROVEMENTS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "breaking<<EOF" >> $GITHUB_OUTPUT
+          echo "$BREAKING" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "added_lines<<EOF" >> $GITHUB_OUTPUT
+          echo "$ADDED_LINES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "✨ Analysis completed:"
+          echo "📝 Commit: $COMMIT_MESSAGE"
+          echo "👤 Author: $COMMIT_AUTHOR"
+          echo "📁 Changed files: $CHANGED_FILES"
+          echo "📈 Added lines: $ADDED_LINES"
+      
+      - name: Generate AI-powered tweet content
+        id: ai_tweet
+        run: |
+          node scripts/generate-tweet.js
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          COMMIT_DATA: |
+            {
+              "message": "${{ steps.analysis.outputs.commit_message }}",
+              "author": "${{ steps.analysis.outputs.commit_author }}",
+              "date": "${{ steps.analysis.outputs.commit_date }}",
+              "features": "${{ steps.analysis.outputs.features }}",
+              "fixes": "${{ steps.analysis.outputs.fixes }}",
+              "improvements": "${{ steps.analysis.outputs.improvements }}",
+              "breaking": "${{ steps.analysis.outputs.breaking }}",
+              "changedFiles": "${{ steps.analysis.outputs.changed_files }}",
+              "addedLines": "${{ steps.analysis.outputs.added_lines }}",
+              "commitUrl": "https://github.com/XRPLDevs/pokopay/commit/${{ steps.analysis.outputs.commit_hash }}"
+            }
+      
+      - name: Validate tweet content
+        id: validate_tweet
+        run: |
+          node scripts/validate-tweet.js
+        env:
+          TWEET_CONTENT: ${{ steps.ai_tweet.outputs.tweet_content }}
+          MAX_LENGTH: ${{ env.MAX_TWEET_LENGTH }}
+          REQUIRED_ELEMENTS: "${{ env.BOT_PREFIX }} ${{ env.REQUIRED_HASHTAGS }}"
+      
+      - name: Post to X (Twitter)
+        run: |
+          node scripts/post-tweet.js
+        env:
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+          TWEET_CONTENT: ${{ steps.validate_tweet.outputs.validated_tweet_content }}
+          MAX_LENGTH: ${{ env.MAX_TWEET_LENGTH }} 

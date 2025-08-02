@@ -103,6 +103,38 @@
 - Expo CLI
 - Supabase account
 
+### 🐦 AI-Powered Social Media Integration
+
+PokoPayでは、mainブランチへのマージ時に**AI-powered**で自動的にX（旧Twitter）へ投稿する機能を実装しています。
+
+**🤖 AI生成の特徴:**
+- 魅力的でエンゲージメントの高い投稿を自動生成
+- 技術的な内容を一般ユーザーにも分かりやすく表現
+- 開発チームの努力を称える感情的な要素を含む
+- コミュニティへの感謝の気持ちを表現
+
+**セットアップ手順:**
+1. [TWITTER_SETUP.md](./TWITTER_SETUP.md) を参照
+2. X Developer Portalでアプリを作成
+3. OpenAI API Keyを取得
+4. GitHub SecretsにAPI Keysを設定
+5. mainブランチにプッシュして動作確認
+
+**投稿内容例:**
+```
+【#PokoPay進捗Bot】
+
+✨ 今回のアップデートでは、決済処理の安定性を大幅に向上させました。
+開発チームの皆さんの努力のおかげで、より安全で使いやすいプラットフォームに。
+
+📝 feat: Improve payment processing stability
+🔗 https://github.com/your-org/pokopay/commit/abc123
+
+未来の決済体験を一緒に作り上げていきましょう！✨
+
+#BuildInPublic #ShipATon2025 #vibecoding
+```
+
 ### Installation
 
 ```bash
