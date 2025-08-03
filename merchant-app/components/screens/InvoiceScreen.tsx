@@ -12,6 +12,17 @@ interface InvoiceScreenProps {
   onBack: () => void;
 }
 
+const Header = ({ onBack }: { onBack: () => void }) => (
+  <Box className="pt-16 px-6">
+    <Box className="flex-row items-center">
+      <Pressable onPress={onBack} className="mr-4">
+        <Text className="text-white text-2xl">←</Text>
+      </Pressable>
+      <Text className="text-2xl font-bold text-white">Payment QR</Text>
+    </Box>
+  </Box>
+);
+
 export default function InvoiceScreen({ 
   amount, 
   productName, 
@@ -19,23 +30,9 @@ export default function InvoiceScreen({
   invoiceId, 
   onBack,
 }: InvoiceScreenProps) {
-  const handleHeaderBack = () => {
-    onBack();
-  };
-
   return (
     <Box className="flex-1 bg-black">
-      {/* Header */}
-      <Box className="pt-16 px-6">
-        <Box className="flex-row items-center">
-          <Pressable onPress={handleHeaderBack} className="mr-4">
-            <Text className="text-white text-2xl">←</Text>
-          </Pressable>
-          <Text className="text-2xl font-bold text-white">Payment QR</Text>
-        </Box>
-      </Box>
-
-      {/* QR Code Display */}
+      <Header onBack={onBack} />
       <QRDisplayScreen
         amount={amount}
         productName={productName}
