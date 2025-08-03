@@ -1,181 +1,155 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { ScrollView, Pressable } from 'react-native';
+import { useNavigation } from '@/contexts/NavigationContext';
+
+interface SettingsItem {
+  id: string;
+  label: string;
+  value: string;
+  isModeSelector?: boolean;
+}
+
+interface SettingsSection {
+  title: string;
+  items: SettingsItem[];
+}
+
+const SETTINGS_DATA: SettingsSection[] = [
+  {
+    title: 'Account',
+    items: [
+      { id: 'profile', label: 'Profile', value: 'Edit Profile' },
+      { id: 'email', label: 'Email', value: 'user@example.com' },
+      { id: 'phone', label: 'Phone', value: '+1 (555) 123-4567' },
+    ]
+  },
+  {
+    title: 'Mode',
+    items: [
+      { id: 'mode', label: 'Business Mode', value: '', isModeSelector: true },
+    ]
+  },
+  {
+    title: 'App',
+    items: [
+      { id: 'language', label: 'Language', value: 'English' },
+      { id: 'currency', label: 'Currency', value: 'USD' },
+      { id: 'theme', label: 'Theme', value: 'Dark' },
+    ]
+  }
+];
+
+const APP_INFO = [
+  { label: 'Version', value: '1.0.0' },
+  { label: 'Build', value: '2024.01.15' },
+  { label: 'Last Updated', value: '2 days ago' }
+];
+
+const SettingsItem = ({ item, selectedMode, onPress }: { 
+  item: SettingsItem; 
+  selectedMode: string; 
+  onPress: () => void; 
+}) => (
+  <Pressable
+    onPress={onPress}
+    className="bg-gray-800 rounded-lg p-4 flex-row items-center justify-between"
+  >
+    <Text className="text-white font-medium">{item.label}</Text>
+    <Box className="flex-row items-center">
+      <Text className={`mr-2 ${selectedMode === 'payment' ? 'text-blue-400' : 'text-green-400'}`}>
+        {item.isModeSelector 
+          ? (selectedMode === 'payment' ? 'Payment Mode' : 'Invoice Mode')
+          : item.value
+        }
+      </Text>
+      <Text className="text-gray-400">›</Text>
+    </Box>
+  </Pressable>
+);
+
+const InfoCard = ({ title, children }: { title?: string; children: React.ReactNode }) => (
+  <Box className="bg-gray-900 rounded-lg p-4">
+    {title && <Text className="text-white font-medium mb-2">{title}</Text>}
+    {children}
+  </Box>
+);
 
 export default function SettingsScreen() {
-  const settingsSections = [
-    {
-      title: 'Account',
-      items: [
-        { id: 'profile', label: 'Profile', value: 'Edit Profile' },
-        { id: 'email', label: 'Email', value: 'user@example.com' },
-        { id: 'phone', label: 'Phone', value: '+1 (555) 123-4567' },
-      ]
-    },
-    {
-      title: 'Payment',
-      items: [
-        { id: 'payment-methods', label: 'Payment Methods', value: 'Manage' },
-        { id: 'bank-accounts', label: 'Bank Accounts', value: '2 accounts' },
-        { id: 'cards', label: 'Cards', value: '3 cards' },
-      ]
-    },
-    {
-      title: 'Security',
-      items: [
-        { id: 'password', label: 'Password', value: 'Change' },
-        { id: 'two-factor', label: 'Two-Factor Auth', value: 'Enabled' },
-        { id: 'biometric', label: 'Biometric Login', value: 'Enabled' },
-      ]
-    },
-    {
-      title: 'Notifications',
-      items: [
-        { id: 'push-notifications', label: 'Push Notifications', value: 'On' },
-        { id: 'email-notifications', label: 'Email Notifications', value: 'On' },
-        { id: 'transaction-alerts', label: 'Transaction Alerts', value: 'On' },
-      ]
-    },
-    {
-      title: 'App',
-      items: [
-        { id: 'language', label: 'Language', value: 'English' },
-        { id: 'currency', label: 'Currency', value: 'USD' },
-        { id: 'theme', label: 'Theme', value: 'Dark' },
-      ]
+  const { businessMode, setBusinessMode } = useNavigation();
+  const [selectedMode, setSelectedMode] = useState(businessMode);
+
+  const handleModeToggle = () => {
+    const newMode = selectedMode === 'payment' ? 'invoice' : 'payment';
+    setSelectedMode(newMode);
+    setBusinessMode(newMode);
+  };
+
+  const handleItemPress = (item: SettingsItem) => {
+    if (item.isModeSelector) {
+      handleModeToggle();
+    } else {
+      console.log(`Navigate to ${item.label}`);
     }
-  ];
+  };
 
   return (
     <Box className="flex-1 bg-black">
       <ScrollView className="flex-1 px-4 pt-12 pb-24">
         {/* Header */}
         <Box className="mb-8">
-          <Text className="text-2xl font-bold text-white mb-2">
-            Settings
-          </Text>
-          <Text className="text-gray-400">
-            Manage your account and preferences
-          </Text>
+          <Text className="text-2xl font-bold text-white mb-2">Settings</Text>
+          <Text className="text-gray-400">Manage your account and preferences</Text>
         </Box>
 
         {/* Settings Sections */}
-        {settingsSections.map((section) => (
+        {SETTINGS_DATA.map((section) => (
           <Box key={section.title} className="mb-6">
-            <Text className="text-lg font-semibold text-white mb-4">
-              {section.title}
-            </Text>
+            <Text className="text-lg font-semibold text-white mb-4">{section.title}</Text>
             <Box className="space-y-1">
               {section.items.map((item) => (
-                <Pressable
+                <SettingsItem
                   key={item.id}
-                  onPress={() => console.log(`Navigate to ${item.label}`)}
-                  style={{ 
-                    backgroundColor: '#1F2937', 
-                    borderRadius: 8, 
-                    padding: 16, 
-                    flexDirection: 'row', 
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <Text className="text-white font-medium">{item.label}</Text>
-                  <Box className="flex-row items-center">
-                    <Text className="text-gray-400 mr-2">{item.value}</Text>
-                    <Text className="text-gray-400">›</Text>
-                  </Box>
-                </Pressable>
+                  item={item}
+                  selectedMode={selectedMode}
+                  onPress={() => handleItemPress(item)}
+                />
               ))}
             </Box>
           </Box>
         ))}
 
-        {/* Account Summary */}
+        {/* Mode Description */}
         <Box className="mb-6">
-          <Text className="text-lg font-semibold text-white mb-4">
-            Account Summary
-          </Text>
-          <Box className="bg-gray-900 rounded-lg p-4">
-            <Box className="flex-row justify-between items-center mb-3">
-              <Text className="text-gray-400">Account Type</Text>
-              <Text className="text-white font-medium">Business</Text>
-            </Box>
-            <Box className="flex-row justify-between items-center mb-3">
-              <Text className="text-gray-400">Member Since</Text>
-              <Text className="text-white">January 2024</Text>
-            </Box>
-            <Box className="flex-row justify-between items-center">
-              <Text className="text-gray-400">Status</Text>
-              <Text className="text-green-400 font-medium">Verified</Text>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Support */}
-        <Box className="mb-6">
-          <Text className="text-lg font-semibold text-white mb-4">
-            Support
-          </Text>
-          <Box className="space-y-1">
-            {[
-              { id: 'help', label: 'Help Center', value: 'Get Help' },
-              { id: 'contact', label: 'Contact Support', value: '24/7 Support' },
-              { id: 'feedback', label: 'Send Feedback', value: 'Rate App' },
-            ].map((item) => (
-              <Pressable
-                key={item.id}
-                onPress={() => console.log(`Navigate to ${item.label}`)}
-                style={{ 
-                  backgroundColor: '#1F2937', 
-                  borderRadius: 8, 
-                  padding: 16, 
-                  flexDirection: 'row', 
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <Text className="text-white font-medium">{item.label}</Text>
-                <Box className="flex-row items-center">
-                  <Text className="text-gray-400 mr-2">{item.value}</Text>
-                  <Text className="text-gray-400">›</Text>
-                </Box>
-              </Pressable>
-            ))}
-          </Box>
+          <InfoCard title={selectedMode === 'payment' ? 'Payment Mode' : 'Invoice Mode'}>
+            <Text className="text-gray-400 text-sm">
+              {selectedMode === 'payment' 
+                ? 'Accept payments from customers using QR codes and payment links.'
+                : 'Generate invoices and send them to customers for payment collection.'
+              }
+            </Text>
+          </InfoCard>
         </Box>
 
         {/* App Info */}
         <Box className="mb-6">
-          <Text className="text-lg font-semibold text-white mb-4">
-            App Information
-          </Text>
-          <Box className="bg-gray-900 rounded-lg p-4">
-            <Box className="flex-row justify-between items-center mb-3">
-              <Text className="text-gray-400">Version</Text>
-              <Text className="text-white">1.0.0</Text>
-            </Box>
-            <Box className="flex-row justify-between items-center mb-3">
-              <Text className="text-gray-400">Build</Text>
-              <Text className="text-white">2024.01.15</Text>
-            </Box>
-            <Box className="flex-row justify-between items-center">
-              <Text className="text-gray-400">Last Updated</Text>
-              <Text className="text-white">2 days ago</Text>
-            </Box>
-          </Box>
+          <Text className="text-lg font-semibold text-white mb-4">App Information</Text>
+          <InfoCard>
+            {APP_INFO.map((info, index) => (
+              <Box key={info.label} className={`flex-row justify-between items-center ${index < APP_INFO.length - 1 ? 'mb-3' : ''}`}>
+                <Text className="text-gray-400">{info.label}</Text>
+                <Text className="text-white">{info.value}</Text>
+              </Box>
+            ))}
+          </InfoCard>
         </Box>
 
         {/* Logout Button */}
-        <Box className="mb-6">
-          <Button
-            className="bg-red-600 py-4"
-            onPress={() => console.log('Logout')}
-          >
-            <Text className="text-white font-bold text-lg">Logout</Text>
-          </Button>
-        </Box>
+        <Button className="bg-red-600 py-4 mb-6" onPress={() => console.log('Logout')}>
+          <Text className="text-white font-bold text-lg">Logout</Text>
+        </Button>
       </ScrollView>
     </Box>
   );

@@ -10,6 +10,9 @@ import { useEffect, useState } from "react";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { useColorScheme } from "@/components/useColorScheme";
 import { Slot } from "expo-router";
+import { Box } from "@/components/ui/box";
+import BottomNavigation from "@/components/ui/bottom-navigation";
+import { NavigationProvider, useNavigation } from "@/contexts/NavigationContext";
 
 import "../global.css";
 
@@ -61,8 +64,30 @@ function RootLayoutNav() {
   return (
     <GluestackUIProvider mode={colorScheme === "dark" ? "dark" : "light"}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Slot />
+        <NavigationProvider>
+          <RootLayoutContent />
+        </NavigationProvider>
       </ThemeProvider>
     </GluestackUIProvider>
+  );
+}
+
+function RootLayoutContent() {
+  const { activeTab, setActiveTab, showFooter } = useNavigation();
+
+  const handleTabPress = (tabId: string) => {
+    setActiveTab(tabId);
+    console.log(`Navigating to: ${tabId}`);
+  };
+
+  return (
+    <Box className="flex-1 bg-black relative">
+      <Slot />
+      <BottomNavigation
+        activeTab={activeTab}
+        onTabPress={handleTabPress}
+        show={showFooter}
+      />
+    </Box>
   );
 }

@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Box } from "@/components/ui/box";
-import FooterMenu from "@/components/FooterMenu";
 import PayScreen from "@/components/screens/PayScreen";
 import HistoryScreen from "@/components/screens/HistoryScreen";
 import SettingsScreen from "@/components/screens/SettingsScreen";
 import InvoiceScreen from "@/components/screens/InvoiceScreen";
+import { useNavigation } from "@/contexts/NavigationContext";
 
 interface InvoiceData {
   amount: number;
@@ -14,28 +14,25 @@ interface InvoiceData {
 }
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('pay');
+  const { activeTab, setActiveTab, setShowFooter } = useNavigation();
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
-
-  const handleTabPress = (tabId: string) => {
-    setActiveTab(tabId);
-    console.log(`Navigating to: ${tabId}`);
-  };
 
   const handleGenerateInvoice = (data: InvoiceData) => {
     setInvoiceData(data);
     setActiveTab('invoice');
+    setShowFooter(false); // インボイス画面ではフッターを非表示
   };
 
   const handleBackFromInvoice = () => {
     setInvoiceData(null);
     setActiveTab('pay');
+    setShowFooter(true); // フッターを再表示
   };
 
   const renderScreen = () => {
     switch (activeTab) {
-      case 'history':
-        return <HistoryScreen />;
+      case 'home':
+        return <HistoryScreen />; // Homeタブでは履歴画面を表示
       case 'pay':
         return <PayScreen onGenerateInvoice={handleGenerateInvoice} />;
       case 'settings':
@@ -60,16 +57,8 @@ export default function Home() {
   };
 
   return (
-    <Box className="flex-1 bg-black h-[100vh] relative">
+    <Box className="flex-1 bg-black h-[100vh] pb-20">
       {renderScreen()}
-      
-      {/* FooterMenuはinvoice画面では非表示 */}
-      {activeTab !== 'invoice' && (
-        <FooterMenu 
-          activeTab={activeTab}
-          onTabPress={handleTabPress}
-        />
-      )}
     </Box>
   );
 }
